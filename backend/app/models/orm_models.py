@@ -14,7 +14,8 @@ class Profile(Base):
     __tablename__ = "profiles"
 
     id = Column(String(64), primary_key=True)
-    email = Column(String(255), nullable=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=True)
     display_name = Column(String(255), default="Learner")
     avatar_url = Column(Text, nullable=True)
     preferred_difficulty = Column(String(32), default="intermediate")

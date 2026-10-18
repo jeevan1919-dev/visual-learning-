@@ -279,13 +279,26 @@ class Repository:
         if total_quizzes > 0:
             avg_score = sum(round((a.score / max(1, a.total_questions)) * 100, 1) for a in attempts) / total_quizzes
 
+        # Calculate actual distinct active study dates
+        active_dates = set()
+        for a in attempts:
+            if a.completed_at:
+                active_dates.add(a.completed_at.date())
+        progress_items = db.query(LearningProgress).filter(LearningProgress.user_id == user_id).all()
+        for p in progress_items:
+            if p.last_viewed_at:
+                active_dates.add(p.last_viewed_at.date())
+
+        streak = len(active_dates)
+        estimated_hours = round(completed_docs * 0.5 + total_quizzes * 0.1, 1)
+
         return {
             "total_documents": total_docs,
             "completed_documents": completed_docs,
             "total_quizzes_taken": total_quizzes,
             "average_quiz_score": round(avg_score, 1),
-            "study_streak_days": 3 if total_docs > 0 else 0,
-            "estimated_study_hours": round(completed_docs * 0.75, 1)
+            "study_streak_days": streak,
+            "estimated_study_hours": estimated_hours
         }
 
 repo = Repository()

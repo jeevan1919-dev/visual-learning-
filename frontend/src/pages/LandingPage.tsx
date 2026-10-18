@@ -108,7 +108,7 @@ export const LandingPage: React.FC = () => {
                 Sign In
               </Link>
               <Link
-                to="/dashboard"
+                to={isAuthenticated ? "/dashboard" : "/signup"}
                 className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-all"
               >
                 <span>Get Started Free</span>
@@ -141,7 +141,7 @@ export const LandingPage: React.FC = () => {
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
           <Link
-            to="/dashboard"
+            to={isAuthenticated ? "/dashboard" : "/signup"}
             className="flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:scale-102"
           >
             <Upload className="w-4 h-4" />
@@ -160,7 +160,7 @@ export const LandingPage: React.FC = () => {
         {/* Interactive Drop Preview Card in Hero */}
         <div className="pt-8 max-w-2xl mx-auto">
           <div
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/signup')}
             className="border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 rounded-3xl p-8 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xs hover:border-indigo-500 transition-all cursor-pointer shadow-md group"
           >
             <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -492,13 +492,13 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            <Link to="/dashboard" className="hover:text-indigo-600">
+            <Link to={isAuthenticated ? "/dashboard" : "/login"} className="hover:text-indigo-600">
               Dashboard
             </Link>
-            <Link to="/library" className="hover:text-indigo-600">
+            <Link to={isAuthenticated ? "/library" : "/login"} className="hover:text-indigo-600">
               Library
             </Link>
-            <Link to="/settings" className="hover:text-indigo-600">
+            <Link to={isAuthenticated ? "/settings" : "/login"} className="hover:text-indigo-600">
               Settings
             </Link>
             <span>© 2025 VisualLearn AI</span>

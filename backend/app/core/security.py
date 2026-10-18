@@ -42,15 +42,13 @@ def decode_token(token: str) -> dict:
         )
 
 async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer)) -> dict:
-    """Extract authenticated user from Bearer token or return demo user if unauthenticated."""
+    """Extract and verify authenticated user from Bearer token."""
     if not credentials:
-        # Provide default local demo user so the app works seamlessly out of the box
-        return {
-            "id": "demo-student-001",
-            "email": "student@visuallearn.ai",
-            "display_name": "Demo Student",
-            "is_demo": True
-        }
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please sign in to access this resource.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     token = credentials.credentials
     try:
@@ -59,19 +57,20 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token payload",
+                detail="Invalid token payload.",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         return {
             "id": str(user_id),
-            "email": payload.get("email", "user@visuallearn.ai"),
+            "email": payload.get("email", ""),
             "display_name": payload.get("display_name") or payload.get("user_metadata", {}).get("display_name", "Student"),
             "is_demo": False
         }
-    except Exception:
-        # Fallback to demo user if token is expired or testing
-        return {
-            "id": "demo-student-001",
-            "email": "student@visuallearn.ai",
-            "display_name": "Demo Student",
-            "is_demo": True
-        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired session. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

@@ -9,7 +9,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name?: string) => Promise<void>;
-  loginAsDemo: () => Promise<void>;
   logout: () => void;
   updateUser: (data: Partial<UserProfile>) => Promise<void>;
 }
@@ -23,19 +22,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
+      const storedToken = localStorage.getItem('visuallearn_token');
+      if (!storedToken) {
+        setUser(null);
+        setToken(null);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const profile = await authService.getMe();
         setUser(profile);
       } catch (err) {
-        console.warn('Initial session fetch notice:', err);
-        // Fallback to local demo student session
-        setUser({
-          id: 'demo-student-001',
-          email: 'student@visuallearn.ai',
-          display_name: 'Demo Student',
-          preferred_difficulty: 'intermediate',
-          theme_preference: 'system',
-        });
+        // Token is invalid or expired: clear session
+        localStorage.removeItem('visuallearn_token');
+        setToken(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -68,10 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginAsDemo = async () => {
-    await login('demo@visuallearn.ai', 'demopassword123');
-  };
-
   const logout = () => {
     localStorage.removeItem('visuallearn_token');
     setToken(null);
@@ -88,11 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         token,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!token,
         isLoading,
         login,
         signup,
-        loginAsDemo,
         logout,
         updateUser,
       }}

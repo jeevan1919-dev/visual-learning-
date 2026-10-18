@@ -24,7 +24,6 @@ import {
 } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { progressService } from '../services/progressService';
-import { documentService } from '../services/documentService';
 import { DashboardStats, DocumentItem } from '../types';
 import { StatusBadge, Badge } from '../components/common/Badge';
 import { EmptyState } from '../components/common/EmptyState';
@@ -54,16 +53,18 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  // Activity chart data derived from real document counts & quiz counts
-  const chartData = [
-    { day: 'Mon', activity: Math.max(1, (stats?.total_documents || 1) - 2), score: 75 },
-    { day: 'Tue', activity: Math.max(1, (stats?.total_documents || 1) - 1), score: 82 },
-    { day: 'Wed', activity: Math.max(2, stats?.total_documents || 2), score: stats?.average_quiz_score ? Math.min(100, stats.average_quiz_score - 5) : 78 },
-    { day: 'Thu', activity: Math.max(1, (stats?.total_documents || 1)), score: 85 },
-    { day: 'Fri', activity: Math.max(2, (stats?.total_documents || 1) + 1), score: stats?.average_quiz_score ? Math.min(100, stats.average_quiz_score + 2) : 90 },
-    { day: 'Sat', activity: Math.max(1, (stats?.total_documents || 1)), score: stats?.average_quiz_score || 88 },
-    { day: 'Sun', activity: Math.max(3, (stats?.total_documents || 1) + 2), score: stats?.average_quiz_score || 92 },
-  ];
+  const hasDocuments = stats && stats.total_documents > 0;
+  const hasQuizzes = stats && stats.total_quizzes_taken > 0;
+
+  // Real chart data: if user has documents, show their genuine metrics distribution
+  const chartData = hasDocuments
+    ? [
+        { metric: 'Uploaded', value: stats.total_documents },
+        { metric: 'Visuals Ready', value: stats.completed_documents },
+        { metric: 'Quizzes Taken', value: stats.total_quizzes_taken },
+        { metric: 'Active Days', value: stats.study_streak_days },
+      ]
+    : [];
 
   if (loading) {
     return (
@@ -78,8 +79,6 @@ export const DashboardPage: React.FC = () => {
       </div>
     );
   }
-
-  const hasDocuments = stats && stats.total_documents > 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
@@ -105,7 +104,7 @@ export const DashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* Key Metrics Grid */}
+      {/* Key Metrics Grid (All Authentic Database Counts) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs flex items-center justify-between">
           <div>
@@ -147,7 +146,7 @@ export const DashboardPage: React.FC = () => {
           <div>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Average Quiz Score</span>
             <p className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
-              {stats?.average_quiz_score ? `${stats.average_quiz_score}%` : '—'}
+              {hasQuizzes ? `${stats?.average_quiz_score}%` : '0%'}
             </p>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -158,55 +157,59 @@ export const DashboardPage: React.FC = () => {
 
       {/* Visual Analytics Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Study & Concept Activity</h3>
-              <p className="text-[11px] text-slate-500">Visual lesson views and interactions over time</p>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Study Pipeline & Mastery</h3>
+              <p className="text-[11px] text-slate-500">Real verified counts across your personal study workspace</p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-              Weekly Trend
+              Verified Metrics
             </span>
           </div>
 
-          <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorActivity" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1e293b',
-                    borderRadius: '12px',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: '11px',
-                  }}
-                />
-                <Area type="monotone" dataKey="activity" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorActivity)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {hasDocuments ? (
+            <div className="h-56 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="metric" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      borderRadius: '12px',
+                      border: 'none',
+                      color: '#fff',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#6366f1" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-56 flex flex-col items-center justify-center text-center p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+              <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">No Learning Activity Yet</p>
+              <p className="text-[11px] text-slate-400 max-w-xs mt-1">
+                Upload your first document to begin tracking your study pipeline and quiz mastery scores.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Continue Learning Card */}
+        {/* Learning Workspace Quick Card */}
         <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-purple-300" />
               <span className="text-xs font-semibold uppercase tracking-wider text-purple-200">
-                Study Momentum
+                Visual Workspace
               </span>
             </div>
-            <h3 className="text-lg font-bold mb-2">Ready to level up your retention?</h3>
+            <h3 className="text-lg font-bold mb-2">Transform your textbooks</h3>
             <p className="text-xs text-indigo-200 leading-relaxed">
-              Synthesizing documents into visual graphs improves recall by up to 65% compared to re-reading flat text.
+              Every document you upload is analyzed to generate mind maps, process flowcharts, concept networks, and grounded quizzes.
             </p>
           </div>
 
@@ -215,7 +218,7 @@ export const DashboardPage: React.FC = () => {
               onClick={() => navigate('/library')}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-indigo-900 font-bold text-xs shadow-md hover:bg-indigo-50 transition-colors cursor-pointer"
             >
-              <span>Explore Document Library</span>
+              <span>Go to Document Library</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
